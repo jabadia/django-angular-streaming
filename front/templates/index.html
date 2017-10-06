@@ -30,6 +30,9 @@
                 <span ng-show="isWorking()">working</span>
                 <span ng-hide="isWorking()">fetch()</span>
             </button>
+            <button class="btn btn-danger" ng-click="cancelFetch()" ng-show="isFetching()">
+                cancel
+            </button>
         </div>
         <div class="col-xs-12 mt-2">
             <pre>{{ content }}</pre>
@@ -62,6 +65,7 @@
             };
 
             var decoder = new TextDecoder('utf-8');    // needed when using fetch streaming
+            var reader = null;
 
             var pump = function(reader) {
                 // this function gets data from reader one chunk at a time, until no more chunks are available
@@ -84,19 +88,29 @@
                 console.log("start streaming");
                 fetch('/api/long-text/').then(function(response) {
                     $scope.content = '';
-                    var reader = response.body.getReader();
+                    reader = response.body.getReader();
                     return pump(reader);
                 }).then(function(result) {
                     // this will be called after the last chunk of that has been received
+                    reader = null;
                     console.log('done', result);
                     $scope.status = "idle";
                     $scope.$apply();  // again, fetch() works outside of angular, so we need to manually trigger the digest cycle
                 });
             };
 
+            $scope.cancelFetch = function()
+            {
+                reader && reader.cancel();
+            };
+
             $scope.isWorking = function() {
                 return $scope.status !== 'idle';
             };
+
+            $scope.isFetching = function() {
+                return $scope.status === 'streaming';
+            }
         });
     })();
 
