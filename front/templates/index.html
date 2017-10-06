@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streaming Test</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .mt-1 { margin-top:  5px; }
+        .mt-2 { margin-top: 10px; }
+        .mt-3 { margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+{% verbatim %}
+<div class="container" ng-app="streamingApp" ng-controller="MainCtrl">
+    <div class="row">
+        <div class="col-xs-12">
+            <h1>Streaming Test
+                <small>{{ status }}</small>
+            </h1>
+            <button class="btn btn-primary"
+                    ng-click="startStreaming()"
+                    ng-disabled="isWorking()"
+            >
+                <span ng-show="isWorking()">working</span>
+                <span ng-hide="isWorking()">Start Streaming</span>
+            </button>
+        </div>
+        <div class="col-xs-12 mt-2">
+            <pre>{{ content }}</pre>
+        </div>
+    </div>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+<script>
+    (function () {
+        var app = angular.module('streamingApp', []);
+
+        app.controller('MainCtrl', function ($scope, $http) {
+            $scope.status = "idle";
+            $scope.content = "nothing yet...";
+
+            $scope.startStreaming = function () {
+                $scope.status = "streaming";
+                console.log("start streaming");
+
+                $http.get('/api/long-text/').then(function(response) {
+                    console.log('data', response);
+                    $scope.content = response.data;
+                    $scope.status = "idle";
+                }, function(err) {
+                    console.error(err);
+                });
+            };
+
+            $scope.isWorking = function() {
+                return $scope.status !== 'idle';
+            };
+        });
+    })();
+
+</script>
+
+{% endverbatim %}
+</body>
+</html>
