@@ -1,8 +1,12 @@
 import time
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
+
+
+def generate_response():
+    for i in range(10):
+        yield "hi! {}\n".format(i)
+        time.sleep(1)
 
 
 def long_text(request):
-    response = "hi!"
-    time.sleep(5)
-    return HttpResponse(response)
+    return StreamingHttpResponse(generate_response())
