@@ -19,17 +19,14 @@
             <h1>Streaming Test
                 <small>{{ status }}</small>
             </h1>
-            <button class="btn btn-primary"
-                    ng-click="startHttpGet()"
-                    ng-disabled="isWorking()"
-            >
+            <a class="btn btn-primary" ng-disabled="isWorking()" href="/api/long-text/" target="_blank">
+                open '/api/long-text/' in new tab
+            </a>
+            <button class="btn btn-primary" ng-click="startHttpGet()" ng-disabled="isWorking()">
                 <span ng-show="isWorking()">working</span>
                 <span ng-hide="isWorking()">$http.get()</span>
             </button>
-            <button class="btn btn-primary"
-                    ng-click="startFetch()"
-                    ng-disabled="isWorking()"
-            >
+            <button class="btn btn-primary" ng-click="startFetch()" ng-disabled="isWorking()">
                 <span ng-show="isWorking()">working</span>
                 <span ng-hide="isWorking()">fetch()</span>
             </button>
@@ -49,11 +46,13 @@
             $scope.status = "idle";
             $scope.content = "nothing yet...";
 
+            // get content with angular API $http.get()
             $scope.startHttpGet = function () {
                 $scope.status = "getting";
                 console.log("start getting");
 
                 $http.get('/api/long-text/').then(function(response) {
+                    // this will only be called when the full response.data is available
                     console.log('data', response);
                     $scope.content = response.data;
                     $scope.status = "idle";
@@ -65,16 +64,18 @@
             var decoder = new TextDecoder('utf-8');    // needed when using fetch streaming
 
             var pump = function(reader) {
+                // this function gets data from reader one chunk at a time, until no more chunks are available
                 return reader.read().then(function(result) {
                     if (result.done) {
                         return 'ok';
                     }
 
+                    // result.value is a binary buffer that needs to be decoded into a string
                     const chunk = decoder.decode(result.value);
                     console.log(chunk);
                     $scope.content += chunk;
-                    $scope.$apply();
-                    return pump(reader);
+                    $scope.$apply(); // this is happening outside of angular control, so we need to manually trigger digest cycle
+                    return pump(reader);  // we keep on pumping chunks
                 });
             };
 
@@ -86,9 +87,10 @@
                     var reader = response.body.getReader();
                     return pump(reader);
                 }).then(function(result) {
+                    // this will be called after the last chunk of that has been received
                     console.log('done', result);
                     $scope.status = "idle";
-                    $scope.$apply();
+                    $scope.$apply();  // again, fetch() works outside of angular, so we need to manually trigger the digest cycle
                 });
             };
 
