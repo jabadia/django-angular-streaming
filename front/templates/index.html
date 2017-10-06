@@ -20,11 +20,18 @@
                 <small>{{ status }}</small>
             </h1>
             <button class="btn btn-primary"
-                    ng-click="startStreaming()"
+                    ng-click="startHttpGet()"
                     ng-disabled="isWorking()"
             >
                 <span ng-show="isWorking()">working</span>
-                <span ng-hide="isWorking()">Start Streaming</span>
+                <span ng-hide="isWorking()">$http.get()</span>
+            </button>
+            <button class="btn btn-primary"
+                    ng-click="startFetch()"
+                    ng-disabled="isWorking()"
+            >
+                <span ng-show="isWorking()">working</span>
+                <span ng-hide="isWorking()">fetch()</span>
             </button>
         </div>
         <div class="col-xs-12 mt-2">
@@ -42,9 +49,9 @@
             $scope.status = "idle";
             $scope.content = "nothing yet...";
 
-            $scope.startStreaming = function () {
-                $scope.status = "streaming";
-                console.log("start streaming");
+            $scope.startHttpGet = function () {
+                $scope.status = "getting";
+                console.log("start getting");
 
                 $http.get('/api/long-text/').then(function(response) {
                     console.log('data', response);
@@ -52,6 +59,36 @@
                     $scope.status = "idle";
                 }, function(err) {
                     console.error(err);
+                });
+            };
+
+            var decoder = new TextDecoder('utf-8');    // needed when using fetch streaming
+
+            var pump = function(reader) {
+                return reader.read().then(function(result) {
+                    if (result.done) {
+                        return 'ok';
+                    }
+
+                    const chunk = decoder.decode(result.value);
+                    console.log(chunk);
+                    $scope.content += chunk;
+                    $scope.$apply();
+                    return pump(reader);
+                });
+            };
+
+            $scope.startFetch = function() {
+                $scope.status = "streaming";
+                console.log("start streaming");
+                fetch('/api/long-text/').then(function(response) {
+                    $scope.content = '';
+                    var reader = response.body.getReader();
+                    return pump(reader);
+                }).then(function(result) {
+                    console.log('done', result);
+                    $scope.status = "idle";
+                    $scope.$apply();
                 });
             };
 
